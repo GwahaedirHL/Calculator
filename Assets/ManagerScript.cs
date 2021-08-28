@@ -101,11 +101,11 @@ public class ManagerScript : MonoBehaviour
             case StepEqual.PreviousYInput: 
                 break; 
                
-        }
+        }  
             logText.text = operationFormat(x) + y.ToString() + "=";
             result = operation(x, y);
             x = result.Value;
             inputText.text = result.ToString();
-            Debug.Log("Second step : x= " + x + "  " + "y= " + y);
+            Debug.Log("Second step : x= " + x + "  " + "y= " + y);  
     }
 }
