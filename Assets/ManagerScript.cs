@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +9,7 @@ public class ManagerScript : MonoBehaviour
     private float x;
     private float y;
     private float? result;
+    private float? cache;
     private Func<float, float, float?> operation;
     private Func<float?, string> operationFormat; 
     private enum Step 
@@ -18,14 +19,16 @@ public class ManagerScript : MonoBehaviour
         FirstValueInput,
         OperationInput,
         SecondValueInput,
-        Output,
-        NoYInput,
-        PreviousYInput
+        UsingCache
     }
     private Step step;
     private void Start()
     {
         Clear();
+    }
+    private void Update()
+    {
+        Debug.LogWarning(step.ToString());
     }
     public void Clear() 
     {
@@ -47,13 +50,20 @@ public class ManagerScript : MonoBehaviour
             case Step.FirstValueInput:
                 inputText.text += buttonName;
                 break;
-            case Step.NoYInput:
+            case Step.SecondValueInput:
                 inputText.text += buttonName;
                 break;
-            case Step.PreviousYInput:
+            case Step.OperationInput:
+                inputText.text = buttonName;
                 step = Step.SecondValueInput;
-                step = Step.NoYInput;
-                inputText.text += buttonName;
+                break;
+            case Step.ZeroDivision:
+                inputText.text = buttonName;
+                logText.text = default;
+                step = Step.FirstValueInput;
+                break;
+            case Step.UsingCache:
+               //TODO!
                 break;
         }
         
@@ -71,12 +81,12 @@ public class ManagerScript : MonoBehaviour
                 step = Step.OperationInput;
                 break;
             case Step.FirstValueInput:
-                step = Step.SecondValueInput;
                 x = Single.Parse(inputText.text);          
                 logText.text = format(x);
                 operation = callback;
                 operationFormat = format;
                 inputText.text = default;
+                step = Step.OperationInput;
                 break;
             case Step.OperationInput:
                 logText.text = format(x);
@@ -100,7 +110,15 @@ public class ManagerScript : MonoBehaviour
                 inputText.text = default;
                 //step = Step.OperationInput;
                 break;
-
+            case Step.ZeroDivision:
+                break;
+            case Step.UsingCache:
+                operation = callback;
+                operationFormat = format;
+                x = Single.Parse(inputText.text);
+                logText.text = operationFormat(x);
+                step = Step.OperationInput;
+                break;
             
         }
         
@@ -113,30 +131,55 @@ public class ManagerScript : MonoBehaviour
             case Step.Opening:
                 logText.text = inputText.text + "=";
                 break;
-            case Step.NoYInput:
-                step = Step.FirstValueInput;
-                step = Step.PreviousYInput;
-                y = Single.Parse(inputText.text);
-                logText.text = operationFormat(x);
-                var tmp = operation(x, y);
+            case Step.FirstValueInput:
+                logText.text = inputText.text + "=";
+                x = Single.Parse(inputText.text);
+                step = Step.Opening;
+                break;
+            case Step.OperationInput:
+                var tmp = operation(x, x);
                 if (tmp == null)
                 {
-                    Clear();
-                    inputText.text = "������ �� ���� ������!";
+                    inputText.text = "Результат не определен!";
+                    step = Step.ZeroDivision;
                 }
                 else
                 {
-                    result = tmp;
-                    x = result.Value;
+                    logText.text = operationFormat(x) + x.ToString() + "=";
+                    inputText.text = tmp.ToString();
+                    cache = x;
+                    step = Step.UsingCache;
+                }   
+                break;
+            case Step.SecondValueInput:
+                y = Single.Parse(inputText.text);
+                logText.text = operationFormat(x);
+                var tmp1 = operation(x, y);
+                if (tmp1 == null)
+                {
+                    inputText.text = "Делить на ноль нельзя!";
+                    step = Step.ZeroDivision;
+                }
+                else
+                {
+                    x = tmp1.Value;
                     logText.text += y.ToString() + "=";
-                    inputText.text = result.ToString();
+                    inputText.text = tmp1.ToString();
+                    step = Step.OperationInput;
                 }
                 break;
-            case Step.PreviousYInput: 
+            case Step.UsingCache:
+                x = Single.Parse(inputText.text);
+                var tmp2 = operation(x, cache.Value);
+                logText.text = operationFormat(x) + cache.ToString() + "=";
+                inputText.text = tmp2.ToString();
+                break;
+            case Step.ZeroDivision:
+                Clear();
                 break; 
                
         }
         
-        Debug.Log("Second step : x= " + x + "  " + "y= " + y);  
+        //Debug.Log("Second step : x= " + x + "  " + "y= " + y);  
     }
 }
