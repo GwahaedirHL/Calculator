@@ -13,52 +13,75 @@ public class ManagerScript : MonoBehaviour
     private Func<float?, string> operationFormat; 
     private enum Step 
     {
+        Opening,
+        ZeroDivision,
         FirstValueInput,
         OperationInput,
         SecondValueInput,
-        Output
-    }
-    private enum StepEqual
-    {
+        Output,
         NoYInput,
         PreviousYInput
     }
     private Step step;
-    private StepEqual stepEqual;
+    private void Start()
+    {
+        Clear();
+    }
     public void Clear() 
     {
-        x = default;
+        x = 0;
         y = default;
-        step = Step.FirstValueInput;
-        inputText.text = default;
+        step = Step.Opening;
+        inputText.text = "0";
         logText.text = default;
-        stepEqual = StepEqual.NoYInput;
     }
     public void Type(string buttonName)
     {
-        switch (stepEqual)
+        switch (step)
 
         {
-            case StepEqual.NoYInput: 
+            case Step.Opening:
+                inputText.text = buttonName;
+                step = Step.FirstValueInput;
                 break;
-            case StepEqual.PreviousYInput:
+            case Step.FirstValueInput:
+                inputText.text += buttonName;
+                break;
+            case Step.NoYInput:
+                inputText.text += buttonName;
+                break;
+            case Step.PreviousYInput:
                 step = Step.SecondValueInput;
-                stepEqual = StepEqual.NoYInput;
+                step = Step.NoYInput;
+                inputText.text += buttonName;
                 break;
         }
-        inputText.text += buttonName;
+        
     }
     
     public void SendCheckableOperation(Func<float,float,float?> callback, Func<float?, string> format) 
     {
         switch (step)
         {
+            case Step.Opening:
+
+                logText.text = format(x);
+                operation = callback;
+                operationFormat = format;
+                step = Step.OperationInput;
+                break;
             case Step.FirstValueInput:
                 step = Step.SecondValueInput;
                 x = Single.Parse(inputText.text);          
                 logText.text = format(x);
+                operation = callback;
+                operationFormat = format;
+                inputText.text = default;
                 break;
             case Step.OperationInput:
+                logText.text = format(x);
+                operation = callback;
+                operationFormat = format;
 
                 break;
             case Step.SecondValueInput:
@@ -72,33 +95,48 @@ public class ManagerScript : MonoBehaviour
                     x = result.Value;
                     logText.text = format(x);
                 }
-               //step = Step.OperationInput;
+                operation = callback;
+                operationFormat = format;
+                inputText.text = default;
+                //step = Step.OperationInput;
                 break;
 
             
         }
         
-        operation = callback;
-        operationFormat = format;
-        inputText.text = default;
+        
     }
     public void Equal()
     {
-        switch (stepEqual)
+        switch (step)
         {
-            case StepEqual.NoYInput:
-                step = Step.FirstValueInput;
-                stepEqual = StepEqual.PreviousYInput;
-                y = Single.Parse(inputText.text);
+            case Step.Opening:
+                logText.text = inputText.text + "=";
                 break;
-            case StepEqual.PreviousYInput: 
+            case Step.NoYInput:
+                step = Step.FirstValueInput;
+                step = Step.PreviousYInput;
+                y = Single.Parse(inputText.text);
+                logText.text = operationFormat(x);
+                var tmp = operation(x, y);
+                if (tmp == null)
+                {
+                    Clear();
+                    inputText.text = "Делить на ноль нельзя!";
+                }
+                else
+                {
+                    result = tmp;
+                    x = result.Value;
+                    logText.text += y.ToString() + "=";
+                    inputText.text = result.ToString();
+                }
+                break;
+            case Step.PreviousYInput: 
                 break; 
                
-        }  
-            logText.text = operationFormat(x) + y.ToString() + "=";
-            result = operation(x, y);
-            x = result.Value;
-            inputText.text = result.ToString();
-            Debug.Log("Second step : x= " + x + "  " + "y= " + y);  
+        }
+        
+        Debug.Log("Second step : x= " + x + "  " + "y= " + y);  
     }
 }
