@@ -34,6 +34,7 @@ public class ManagerScript : MonoBehaviour
     {
         x = 0;
         y = default;
+        cache = default;
         step = Step.Opening;
         inputText.text = "0";
         logText.text = default;
@@ -107,7 +108,7 @@ public class ManagerScript : MonoBehaviour
                 }
                 operation = callback;
                 operationFormat = format;
-                inputText.text = default;
+                inputText.text = default; 
                 //step = Step.OperationInput;
                 break;
             case Step.ZeroDivision:
@@ -163,9 +164,10 @@ public class ManagerScript : MonoBehaviour
                 else
                 {
                     x = tmp1.Value;
+                    cache = y;
                     logText.text += y.ToString() + "=";
                     inputText.text = tmp1.ToString();
-                    step = Step.OperationInput;
+                    step = Step.UsingCache;
                 }
                 break;
             case Step.UsingCache:
@@ -180,6 +182,6 @@ public class ManagerScript : MonoBehaviour
                
         }
         
-        //Debug.Log("Second step : x= " + x + "  " + "y= " + y);  
+        Debug.Log("Second step : x= " + x + "  " + "y= " + y + " cache= " + cache.ToString());  
     }
 }
