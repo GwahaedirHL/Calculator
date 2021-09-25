@@ -99,17 +99,20 @@ public class ManagerScript : MonoBehaviour
                 y = Single.Parse(inputText.text);           
                 var tmp = operation(x, y);
                 if (tmp == null)
-                    logText.text = format(tmp);
+                {
+                    inputText.text = "На ноль делить нельзя!";
+                    step = Step.ZeroDivision;
+                }
                 else
                 {
                     result = tmp;
                     x = result.Value;
                     logText.text = format(x);
+                    inputText.text = x.ToString(); 
+                    step = Step.OperationInput;
                 }
                 operation = callback;
                 operationFormat = format;
-                inputText.text = default; 
-                //step = Step.OperationInput;
                 break;
             case Step.ZeroDivision:
                 break;
