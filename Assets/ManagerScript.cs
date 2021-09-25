@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.XR;
 
 public class ManagerScript : MonoBehaviour
 {
@@ -41,33 +42,40 @@ public class ManagerScript : MonoBehaviour
     }
     public void Type(string buttonName)
     {
-        switch (step)
-
+        if (inputText.text.Contains(",") == true && buttonName == ",")
+            inputText.text = inputText.text; //?
+        else
         {
-            case Step.Opening:
-                inputText.text = buttonName;
-                step = Step.FirstValueInput;
-                break;
-            case Step.FirstValueInput:
-                inputText.text += buttonName;
-                break;
-            case Step.SecondValueInput:
-                inputText.text += buttonName;
-                break;
-            case Step.OperationInput:
-                inputText.text = buttonName;
-                step = Step.SecondValueInput;
-                break;
-            case Step.ZeroDivision:
-                inputText.text = buttonName;
-                logText.text = default;
-                step = Step.FirstValueInput;
-                break;
-            case Step.UsingCache:
-               //TODO!
-                break;
+            switch (step)
+
+            {
+                case Step.Opening:
+                    if (buttonName == ",")
+                        inputText.text += buttonName;
+                    else
+                        inputText.text = buttonName;
+                    step = Step.FirstValueInput;
+                    break;
+                case Step.FirstValueInput:
+                    inputText.text += buttonName;
+                    break;
+                case Step.SecondValueInput:
+                    inputText.text += buttonName;
+                    break;
+                case Step.OperationInput:
+                    inputText.text = buttonName;
+                    step = Step.SecondValueInput;
+                    break;
+                case Step.ZeroDivision:
+                    inputText.text = buttonName;
+                    logText.text = default;
+                    step = Step.FirstValueInput;
+                    break;
+                case Step.UsingCache:
+                    //TODO!
+                    break;
+            }
         }
-        
     }
     
     public void SendCheckableOperation(Func<float,float,float?> callback, Func<float?, string> format) 
