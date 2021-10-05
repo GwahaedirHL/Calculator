@@ -1,6 +1,64 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.UI;
+public enum Step
+{
+    Opening,
+    ZeroDivision,
+    FirstValueInput,
+    OperationInput,
+    SecondValueInput,
+    UsingCache
+}
+public class Calculator 
+{
+    private float x;
+    private float y;
+    private float? result;
+    private float? cache;
+
+    private Step step;
+
+    public Step Step => step;
+    public float X => x;
+    public void Clear()
+    {
+        x = 0;
+        y = default;
+        cache = default;
+        step = Step.Opening;
+    }
+    public void Type(string digit) 
+    {
+        switch (step)
+
+        {
+            case Step.Opening:
+                x = float.Parse(digit);
+                step = Step.FirstValueInput;
+                break;
+            case Step.FirstValueInput:
+                x = float.Parse(x.ToString() + digit);
+                break;
+            case Step.SecondValueInput:
+               
+                break;
+            case Step.OperationInput:
+               
+                step = Step.SecondValueInput;
+                break;
+            case Step.ZeroDivision:
+               
+                step = Step.FirstValueInput;
+                break;
+            case Step.UsingCache:
+                //TODO!
+                break;
+        }
+
+    }
+
+}
 
 public class ManagerScript : MonoBehaviour
 {
@@ -11,7 +69,8 @@ public class ManagerScript : MonoBehaviour
     private float? result;
     private float? cache;
     private Func<float, float, float?> operation;
-    private Func<float?, string> operationFormat; 
+    private Func<float?, string> operationFormat;
+    Calculator calculator;
     private enum Step 
     {
         Opening,
@@ -24,49 +83,49 @@ public class ManagerScript : MonoBehaviour
     private Step step;
     private void Start()
     {
+        calculator = new Calculator();
         Clear();
     }
     private void Update()
     {
-        Debug.LogWarning(step.ToString());
+        Debug.LogWarning(calculator.Step.ToString());
     }
     public void Clear() 
     {
-        x = 0;
-        y = default;
-        cache = default;
-        step = Step.Opening;
+        calculator.Clear();
         inputText.text = "0";
         logText.text = default;
     }
     public void Type(string buttonName)
     {
-        switch (step)
+        calculator.Type(buttonName);
+        inputText.text = calculator.X.ToString();
+        //switch (step)
 
-        {
-            case Step.Opening:
-                inputText.text = buttonName;
-                step = Step.FirstValueInput;
-                break;
-            case Step.FirstValueInput:
-                inputText.text += buttonName;
-                break;
-            case Step.SecondValueInput:
-                inputText.text += buttonName;
-                break;
-            case Step.OperationInput:
-                inputText.text = buttonName;
-                step = Step.SecondValueInput;
-                break;
-            case Step.ZeroDivision:
-                inputText.text = buttonName;
-                logText.text = default;
-                step = Step.FirstValueInput;
-                break;
-            case Step.UsingCache:
-               //TODO!
-                break;
-        }
+        //{
+        //    case Step.Opening:
+        //        inputText.text = buttonName;
+        //        step = Step.FirstValueInput;
+        //        break;
+        //    case Step.FirstValueInput:
+        //        inputText.text += buttonName;
+        //        break;
+        //    case Step.SecondValueInput:
+        //        inputText.text += buttonName;
+        //        break;
+        //    case Step.OperationInput:
+        //        inputText.text = buttonName;
+        //        step = Step.SecondValueInput;
+        //        break;
+        //    case Step.ZeroDivision:
+        //        inputText.text = buttonName;
+        //        logText.text = default;
+        //        step = Step.FirstValueInput;
+        //        break;
+        //    case Step.UsingCache:
+        //       //TODO!
+        //        break;
+        //}
         
     }
     

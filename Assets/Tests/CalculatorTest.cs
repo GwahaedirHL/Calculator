@@ -1,18 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using NUnit.Framework;
 using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-public class NewTestScript
+
+public class CalculatorTest
 {
-    // A Test behaves as an ordinary method
     [Test]
-    public void NewTestScriptSimplePasses()
+    public void Clear()
     {
-        Assert.IsTrue(1 == 2); 
-        // Use the Assert class to test conditions
+        var calculator = new Calculator();
+        calculator.Clear();
+        Assert.IsTrue(calculator.X == 0);
     }
 
    
