@@ -17,7 +17,7 @@ public class Addition : MonoBehaviour
             },
             (result) =>
             {
-                return result.ToString() + " " + button.name;
+                return result + " " + button.name;
             }
             );
     }

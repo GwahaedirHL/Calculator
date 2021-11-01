@@ -25,7 +25,7 @@ public class Division : MonoBehaviour
                     manager.Clear();
                     return "Делить на ноль нельзя!";
                 }
-                return result.ToString() + " " + button.name;
+                return result + " " + button.name;
             }
             );
     }

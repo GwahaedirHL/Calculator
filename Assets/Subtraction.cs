@@ -17,7 +17,7 @@ public class Subtraction : MonoBehaviour
             },
             (result) =>
             {
-                return result.ToString() + " " + button.name;
+                return result + " " + button.name;
             }
             );
     }

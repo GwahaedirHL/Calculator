@@ -1,86 +1,14 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.UI;
-public enum Step
-{
-    Opening,
-    ZeroDivision,
-    FirstValueInput,
-    OperationInput,
-    SecondValueInput,
-    UsingCache
-}
-public class Calculator 
-{
-    private float x;
-    private float y;
-    private float? result;
-    private float? cache;
 
-    private Step step;
-
-    public Step Step => step;
-    public float X => x;
-    public void Clear()
-    {
-        x = 0;
-        y = default;
-        cache = default;
-        step = Step.Opening;
-    }
-    public void Type(string digit) 
-    {
-        switch (step)
-
-        {
-            case Step.Opening:
-                x = float.Parse(digit);
-                step = Step.FirstValueInput;
-                break;
-            case Step.FirstValueInput:
-                x = float.Parse(x.ToString() + digit);
-                break;
-            case Step.SecondValueInput:
-               
-                break;
-            case Step.OperationInput:
-               
-                step = Step.SecondValueInput;
-                break;
-            case Step.ZeroDivision:
-               
-                step = Step.FirstValueInput;
-                break;
-            case Step.UsingCache:
-                //TODO!
-                break;
-        }
-
-    }
-
-}
 
 public class ManagerScript : MonoBehaviour
 {
     [SerializeField] private Text inputText;
     [SerializeField] private Text logText;
-    private float x;
-    private float y;
-    private float? result;
-    private float? cache;
-    private Func<float, float, float?> operation;
-    private Func<float?, string> operationFormat;
     Calculator calculator;
-    private enum Step 
-    {
-        Opening,
-        ZeroDivision,
-        FirstValueInput,
-        OperationInput,
-        SecondValueInput,
-        UsingCache
-    }
-    private Step step;
+    private Func<string, string> operationFormat;
     private void Start()
     {
         calculator = new Calculator();
@@ -99,151 +27,103 @@ public class ManagerScript : MonoBehaviour
     public void Type(string buttonName)
     {
         calculator.Type(buttonName);
-        inputText.text = calculator.X.ToString();
-        //switch (step)
-
-        //{
-        //    case Step.Opening:
-        //        inputText.text = buttonName;
-        //        step = Step.FirstValueInput;
-        //        break;
-        //    case Step.FirstValueInput:
-        //        inputText.text += buttonName;
-        //        break;
-        //    case Step.SecondValueInput:
-        //        inputText.text += buttonName;
-        //        break;
-        //    case Step.OperationInput:
-        //        inputText.text = buttonName;
-        //        step = Step.SecondValueInput;
-        //        break;
-        //    case Step.ZeroDivision:
-        //        inputText.text = buttonName;
-        //        logText.text = default;
-        //        step = Step.FirstValueInput;
-        //        break;
-        //    case Step.UsingCache:
-        //       //TODO!
-        //        break;
-        //}
-        
-    }
-    
-    public void SendCheckableOperation(Func<float,float,float?> callback, Func<float?, string> format) 
-    {
-        switch (step)
+        switch (calculator.Step)
         {
             case Step.Opening:
-
-                logText.text = format(x);
-                operation = callback;
-                operationFormat = format;
-                step = Step.OperationInput;
-                break;
             case Step.FirstValueInput:
-                x = Single.Parse(inputText.text);          
-                logText.text = format(x);
-                operation = callback;
-                operationFormat = format;
-                inputText.text = default;
-                step = Step.OperationInput;
-                break;
-            case Step.OperationInput:
-                logText.text = format(x);
-                operation = callback;
-                operationFormat = format;
-
+                inputText.text = calculator.X;
                 break;
             case Step.SecondValueInput:
-                y = Single.Parse(inputText.text);           
-                var tmp = operation(x, y);
-                if (tmp == null)
-                {
-                    inputText.text = "На ноль делить нельзя!";
-                    step = Step.ZeroDivision;
-                }
-                else
-                {
-                    result = tmp;
-                    x = result.Value;
-                    logText.text = format(x);
-                    inputText.text = x.ToString(); 
-                    step = Step.OperationInput;
-                }
-                operation = callback;
-                operationFormat = format;
+            case Step.OperationInput:
+                inputText.text = calculator.Y;
                 break;
             case Step.ZeroDivision:
+                inputText.text = calculator.X;
+                logText.text = default;
                 break;
-            case Step.UsingCache:
-                operation = callback;
-                operationFormat = format;
-                x = Single.Parse(inputText.text);
-                logText.text = operationFormat(x);
-                step = Step.OperationInput;
+            case Step.ResultOperation:                
                 break;
-            
         }
-        
-        
+    }
+    
+    public void SendCheckableOperation(Func<float,float,float?> callback, Func<string, string> format) 
+    {
+        calculator.SendCheckableOperation(callback);
+        switch (calculator.Step)
+        {
+            case Step.Opening:
+                logText.text = format(calculator.X);
+                operationFormat = format;
+                break;
+            case Step.FirstValueInput:
+                logText.text = format(calculator.X);
+                operationFormat = format;
+                inputText.text = default;                
+                break;
+            case Step.OperationInput:
+                logText.text = format(calculator.X);
+                inputText.text = calculator.X.ToString();
+                operationFormat = format;
+                break;
+            case Step.SecondValueInput:             
+                //{
+                //    result = tmp;
+                //    x = result.Value;
+                //    logText.text = format(x);
+                //    inputText.text = x.ToString();
+                //    step = Step.OperationInput;
+                //}
+                //operation = callback;
+                //operationFormat = format;
+                break;
+            case Step.ZeroDivision:
+                logText.text = operationFormat(calculator.X) + format(calculator.Y);
+                inputText.text = "На ноль делить нельзя!";
+                break;
+            //case Step.UsingCache:
+            //    operation = callback;
+            //    operationFormat = format;
+            //    x = Single.Parse(inputText.text);
+            //    logText.text = operationFormat(x);
+            //    step = Step.OperationInput;
+            //    break;
+
+        }
+
+
     }
     public void Equal()
     {
-        switch (step)
+        calculator.Equal();
+        switch (calculator.Step)
         {
             case Step.Opening:
                 logText.text = inputText.text + "=";
                 break;
             case Step.FirstValueInput:
-                logText.text = inputText.text + "=";
-                x = Single.Parse(inputText.text);
-                step = Step.Opening;
+                logText.text = inputText.text + "=";                
                 break;
             case Step.OperationInput:
-                var tmp = operation(x, x);
-                if (tmp == null)
-                {
-                    inputText.text = "Результат не определен!";
-                    step = Step.ZeroDivision;
-                }
-                else
-                {
-                    logText.text = operationFormat(x) + x.ToString() + "=";
-                    inputText.text = tmp.ToString();
-                    cache = x;
-                    step = Step.UsingCache;
-                }   
+                logText.text = operationFormat(calculator.X) + calculator.X + "=";
+                inputText.text = calculator.X;
                 break;
             case Step.SecondValueInput:
-                y = Single.Parse(inputText.text);
-                logText.text = operationFormat(x);
-                var tmp1 = operation(x, y);
-                if (tmp1 == null)
-                {
-                    inputText.text = "Делить на ноль нельзя!";
-                    step = Step.ZeroDivision;
-                }
-                else
-                {
-                    x = tmp1.Value;
-                    cache = y;
-                    logText.text += y.ToString() + "=";
-                    inputText.text = tmp1.ToString();
-                    step = Step.UsingCache;
-                }
+                inputText.text = calculator.Result;
+                logText.text = operationFormat(calculator.X) + calculator.Y + "=";
                 break;
-            case Step.UsingCache:
-                x = Single.Parse(inputText.text);
-                var tmp2 = operation(x, cache.Value);
-                logText.text = operationFormat(x) + cache.ToString() + "=";
-                inputText.text = tmp2.ToString();
-                break;
+            case Step.ResultOperation:
+                inputText.text = calculator.Result;
+                logText.text = operationFormat(calculator.X) + calculator.Y + "="; break;
             case Step.ZeroDivision:
+                var x = calculator.X;
                 Clear();
-                break; 
-               
-        }
-        
-        Debug.Log("Second step : x= " + x + "  " + "y= " + y + " cache= " + cache.ToString());  
+                if (x == "0")
+                    inputText.text = "Результат не определен!";                
+                else
+                    inputText.text = "На ноль делить нельзя!";
+                logText.text = operationFormat(x);
+                break;
+
+        }      
     }
 }

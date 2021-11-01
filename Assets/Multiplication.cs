@@ -16,7 +16,7 @@ public class Multiplication : MonoBehaviour
             },
             (result) =>
             {
-                return result.ToString() + " " + button.name;
+                return result + " " + button.name;
             }
             );
     }
