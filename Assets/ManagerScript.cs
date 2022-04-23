@@ -1,17 +1,24 @@
 ﻿using System;
 using UnityEngine;
 using UnityEngine.UI;
-
-
+public interface ICalculator : IType, ISendCheckableOperation, IEqual
+{
+    ICalculator ChangeState();
+}
 public class ManagerScript : MonoBehaviour
 {
     [SerializeField] private Text inputText;
     [SerializeField] private Text logText;
     Calculator calculator;
     private Func<string, string> operationFormat;
+
+
+    ICalculator icalculator;
+
     private void Start()
     {
         calculator = new Calculator();
+        icalculator = new StartingState(calculator);
         Clear();
     }
     private void Update()
@@ -26,6 +33,9 @@ public class ManagerScript : MonoBehaviour
     }
     public void Type(string buttonName)
     {
+        icalculator.TextParse(buttonName);
+        icalculator.ChangeState();
+
         calculator.Type(buttonName);
         switch (calculator.Step)
         {
@@ -48,6 +58,9 @@ public class ManagerScript : MonoBehaviour
     
     public void SendCheckableOperation(Func<float,float,float?> callback, Func<string, string> format) 
     {
+        icalculator.OperationTypeSaving(callback);
+        icalculator.ChangeState();
+
         calculator.SendCheckableOperation(callback);
         switch (calculator.Step)
         {
@@ -64,36 +77,20 @@ public class ManagerScript : MonoBehaviour
                 logText.text = format(calculator.X);
                 inputText.text = calculator.X.ToString();
                 operationFormat = format;
-                break;
-            case Step.SecondValueInput:             
-                //{
-                //    result = tmp;
-                //    x = result.Value;
-                //    logText.text = format(x);
-                //    inputText.text = x.ToString();
-                //    step = Step.OperationInput;
-                //}
-                //operation = callback;
-                //operationFormat = format;
-                break;
+                break;  
             case Step.ZeroDivision:
                 logText.text = operationFormat(calculator.X) + format(calculator.Y);
                 inputText.text = "На ноль делить нельзя!";
                 break;
-            //case Step.UsingCache:
-            //    operation = callback;
-            //    operationFormat = format;
-            //    x = Single.Parse(inputText.text);
-            //    logText.text = operationFormat(x);
-            //    step = Step.OperationInput;
-            //    break;
-
         }
 
 
     }
     public void Equal()
     {
+        icalculator.ActivateOperation();
+        icalculator.ChangeState();
+
         calculator.Equal();
         switch (calculator.Step)
         {
@@ -113,7 +110,8 @@ public class ManagerScript : MonoBehaviour
                 break;
             case Step.ResultOperation:
                 inputText.text = calculator.Result;
-                logText.text = operationFormat(calculator.X) + calculator.Y + "="; break;
+                logText.text = operationFormat(calculator.X) + calculator.Y + "="; 
+                break;
             case Step.ZeroDivision:
                 var x = calculator.X;
                 Clear();
