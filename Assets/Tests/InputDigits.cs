@@ -19,41 +19,46 @@ public class InputDigits
     [Test]
     public void TypeFirstDigitOfFirstValueInput()
     {
-        var calculator = new Calculator(0, 0, Step.Opening);
-        calculator.Type("3");
+        var calculator = new Calculator(0, 0);
+        ICalculator icalculator = new StartingState(calculator);
+        icalculator.TextParse("3");
         Assert.IsTrue(calculator.X == "3");
-        Assert.IsTrue(calculator.Step == Step.FirstValueInput);
+        Assert.IsTrue(icalculator is FirstValueInputState);
     }
     [Test]
     public void TypeSecondDigitOfFirstValueInput()
     {
-        var calculator = new Calculator(2,0,Step.FirstValueInput);
-        calculator.Type("3");
+        var calculator = new Calculator(2,0);
+        ICalculator icalculator = new FirstValueInputState(calculator);
+        icalculator.TextParse("3");
         Assert.IsTrue(calculator.X == "23");
-        Assert.IsTrue(calculator.Step == Step.FirstValueInput);
+        Assert.IsTrue(icalculator is FirstValueInputState);
     }
     [Test]
     public void TypeFirstDigitOfSecondValueInput() 
     {
-        var calculator = new Calculator(2,0,Step.OperationInput);
-        calculator.Type("2");
+        var calculator = new Calculator(2,0);
+        ICalculator icalculator = new OperationInputState(calculator);
+        icalculator.TextParse("2");
         Assert.IsTrue(calculator.Y == "2");
-        Assert.IsTrue(calculator.Step == Step.SecondValueInput);
+        Assert.IsTrue(icalculator is SecondValueInputState);
     }
     [Test]
     public void TypeSecondDigitOfSecondValueInput()
     {
-        var calculator = new Calculator(2, 3, Step.SecondValueInput);
-        calculator.Type("2");
+        var calculator = new Calculator(2, 3);
+        ICalculator icalculator = new SecondValueInputState(calculator);
+        icalculator.TextParse("2");
         Assert.IsTrue(calculator.Y == "32");
-        Assert.IsTrue(calculator.Step == Step.SecondValueInput);
+        Assert.IsTrue(icalculator is SecondValueInputState);
     }
     [Test]
     public void TypeFirstDigitOfFirstValueAfterZeroDivisoin()
     {
-        var calculator = new Calculator(212, 0, Step.ZeroDivision);
-        calculator.Type("2");
+        var calculator = new Calculator(212, 0);
+        ICalculator icalculator = new ZeroDivisionState(calculator);
+        icalculator.TextParse("2");
         Assert.IsTrue(calculator.X == "2");
-        Assert.IsTrue(calculator.Step == Step.FirstValueInput);
+        Assert.IsTrue(icalculator is FirstValueInputState);
     }
 }

@@ -3,29 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Interfaces of the three main elements of the calculator.
-
-public interface IType
-{
-    void TextParse(string digit);
-}
-
-public interface ISendCheckableOperation
-{
-    void OperationTypeSaving(Func<float, float, float?> operation);
-}
-
-public interface IEqual
-{
-    void ActivateOperation();
-}
-
 // Classes that represent different states of calculator's ooperation process.
 
- // Step.Opening
+// Step.Opening
 public class StartingState : ICalculator                     
 {
-    private Calculator calculator; 
+    private Calculator calculator;
+    private ICalculator nextState;
     public StartingState(Calculator calculator) 
     {
         this.calculator = calculator;       
@@ -33,13 +17,12 @@ public class StartingState : ICalculator
     public void TextParse(string digit)
     {
         calculator.x = float.Parse(digit);
-        calculator.NextState = new FirstValueInputState(calculator);
+        nextState = new FirstValueInputState(calculator);
     }
     public void OperationTypeSaving(Func<float, float, float?> operation)
     {
         calculator.operation = operation;
-        calculator.NextState = new OperationInputState(calculator);
-
+        nextState = new OperationInputState(calculator);
     }
     public void ActivateOperation()
     {
@@ -48,7 +31,7 @@ public class StartingState : ICalculator
 
     public ICalculator ChangeState()
     {
-        return calculator.NextState;
+        return nextState;
     }
 }
 
@@ -56,6 +39,7 @@ public class StartingState : ICalculator
 public class FirstValueInputState : ICalculator
 {
     private Calculator calculator;
+    private ICalculator nextState;
     public FirstValueInputState(Calculator calculator)
     {
         this.calculator = calculator;
@@ -67,16 +51,16 @@ public class FirstValueInputState : ICalculator
     public void OperationTypeSaving(Func<float, float, float?> operation)
     {
         calculator.operation = operation;
-        calculator.NextState = new OperationInputState(calculator);
+        nextState = new OperationInputState(calculator);
     }
     public void ActivateOperation()
     {
         calculator.result = calculator.x;
-        calculator.NextState = new StartingState(calculator);
+        nextState = new StartingState(calculator);
     }
     public ICalculator ChangeState()
     {
-        return calculator.NextState;
+        return nextState;
     }   
 }
 
@@ -84,6 +68,7 @@ public class FirstValueInputState : ICalculator
 public class OperationInputState : ICalculator
 {
     private Calculator calculator;
+    private ICalculator nextState;
 
     public OperationInputState(Calculator calculator)
     {
@@ -93,7 +78,7 @@ public class OperationInputState : ICalculator
     public void TextParse(string digit)
     {
         calculator.y = float.Parse(digit);
-        calculator.NextState = new SecondValueInputState(calculator);
+        nextState = new SecondValueInputState(calculator);
 
     }
     public void OperationTypeSaving(Func<float, float, float?> operation)
@@ -106,18 +91,18 @@ public class OperationInputState : ICalculator
         var tmp = calculator.operation(calculator.x, calculator.y);
         if (tmp == null)
         {
-            calculator.NextState = new ZeroDivisionState(calculator);
+            nextState = new ZeroDivisionState(calculator);
         }
         else
         {
             calculator.result = tmp.Value;
-            calculator.NextState = new ResultOperationState(calculator);
+            nextState = new ResultOperationState(calculator);
         }
     }
 
     public ICalculator ChangeState()
     {
-        return calculator.NextState;
+        return nextState;
     }
 }
 
@@ -125,6 +110,7 @@ public class OperationInputState : ICalculator
 public class SecondValueInputState : ICalculator
 {
     private Calculator calculator;
+    private ICalculator nextState;
     public SecondValueInputState(Calculator calculator)
     {
         this.calculator = calculator;
@@ -138,13 +124,13 @@ public class SecondValueInputState : ICalculator
         var tmp = operation(calculator.x, calculator.y);
         if (tmp == null)
         {
-            calculator.NextState = new ZeroDivisionState(calculator);
+            nextState = new ZeroDivisionState(calculator);
         }
         else
         {
             calculator.result = tmp;
             calculator.x = calculator.result.Value;
-            calculator.NextState = new OperationInputState(calculator);
+            nextState = new OperationInputState(calculator);
         }
         calculator.operation = operation;
     }
@@ -153,18 +139,18 @@ public class SecondValueInputState : ICalculator
         var tmp1 = calculator.operation(calculator.x, calculator.y);
         if (tmp1 == null)
         {
-            calculator.NextState = new ZeroDivisionState(calculator);
+            nextState = new ZeroDivisionState(calculator);
         }
         else
         {
             calculator.result = tmp1.Value;
-            calculator.NextState = new ResultOperationState(calculator);
+            nextState = new ResultOperationState(calculator);
         }
     }
 
     public ICalculator ChangeState()
     {
-        return calculator.NextState;
+        return nextState;
     }
 
     
@@ -176,6 +162,7 @@ public class SecondValueInputState : ICalculator
 public class ResultOperationState : ICalculator
 {
     private Calculator calculator;
+    private ICalculator nextState;
     public ResultOperationState(Calculator calculator)
     {
         this.calculator = calculator;
@@ -184,13 +171,13 @@ public class ResultOperationState : ICalculator
     {
         calculator.x = float.Parse(digit);
         calculator.result = calculator.x;
-        calculator.NextState = new ResultOperationInputState(calculator);
+        nextState = new ResultOperationInputState(calculator);
     }
     public void OperationTypeSaving(Func<float, float, float?> operation)
     {
         calculator.operation = operation;
         calculator.x = calculator.result.Value;
-        calculator.NextState = new OperationInputState(calculator);
+        nextState = new OperationInputState(calculator);
     }
     public void ActivateOperation()
     {
@@ -198,7 +185,7 @@ public class ResultOperationState : ICalculator
 
     public ICalculator ChangeState()
     {
-        return calculator.NextState;
+        return nextState;
     }    
 }
 
@@ -206,6 +193,7 @@ public class ResultOperationState : ICalculator
 public class ResultOperationInputState : ICalculator
 {
     private Calculator calculator;
+    private ICalculator nextState;
     public ResultOperationInputState(Calculator calculator)
     {
         this.calculator = calculator;
@@ -225,7 +213,7 @@ public class ResultOperationInputState : ICalculator
     }
     public ICalculator ChangeState()
     {
-        return calculator.NextState;
+        return nextState;
     }    
 }
 
@@ -233,6 +221,7 @@ public class ResultOperationInputState : ICalculator
 public class ZeroDivisionState : ICalculator
 {
     private Calculator calculator;
+    private ICalculator nextState;
     public ZeroDivisionState(Calculator calculator)
     {
         this.calculator = calculator;
@@ -240,7 +229,7 @@ public class ZeroDivisionState : ICalculator
     public void TextParse(string digit)
     {
         calculator.x = float.Parse(digit);
-        calculator.NextState = new FirstValueInputState(calculator);
+        nextState = new FirstValueInputState(calculator);
     }
     public void OperationTypeSaving(Func<float, float, float?> operation)
     {
@@ -250,7 +239,7 @@ public class ZeroDivisionState : ICalculator
     }
     public ICalculator ChangeState()
     {
-        return calculator.NextState;
+        return nextState;
     }
 }
 
@@ -276,22 +265,21 @@ public class Calculator
     public float? cache;
     private Step step;
     public Func<float, float, float?> operation;
-    public ICalculator NextState;
     public Step Step => step;
     public string X => x.ToString();
     public string Y => y.ToString();
     public string Result => result?.ToString();
+    public ICalculator NextState;
     public Calculator()
     {
         Clear();
     }
-    public Calculator(float x, float y, Step step, Func<float, float, float?> operation = null)
+    public Calculator(float x, float y, Func<float, float, float?> operation = null)
     {
         this.x = x;
         this.y = y;
-        this.step = step;
+        //this.step = step;
         this.operation = operation;
-        NextState = new StartingState(this);
     }
 
     public void Clear()
@@ -300,6 +288,7 @@ public class Calculator
         y = default;
         result = default;
         step = Step.Opening;
+        NextState = new StartingState(this);
     }
 
     public void NewType(string digit)
@@ -314,120 +303,120 @@ public class Calculator
     {
 
     }
-    public void Type(string digit)
-    {
-        switch (step)
+    //public void Type(string digit)
+    //{
+    //    switch (step)
 
-        {
-            case Step.Opening:
-                x = float.Parse(digit);
-                step = Step.FirstValueInput;
-                break;
-            case Step.FirstValueInput:
-                x = float.Parse(x.ToString() + digit);
-                break;
-            case Step.SecondValueInput:
-                y = float.Parse(y.ToString() + digit);
-                break;
-            case Step.OperationInput:
-                y = float.Parse(digit);
-                step = Step.SecondValueInput;
-                break;
-            case Step.ZeroDivision:
-                x = float.Parse(digit);
-                step = Step.FirstValueInput;
-                break;
-            case Step.ResultOperation:
-                x = float.Parse(digit);
-                result = x;
-                step = Step.ResultOperationInput;
-                break;
-            case Step.ResultOperationInput:
-                x = float.Parse(x.ToString() + digit);
-                result = x;
-                break;
-        }
+    //    {
+    //        case Step.Opening:
+    //            x = float.Parse(digit);
+    //            step = Step.FirstValueInput;
+    //            break;
+    //        case Step.FirstValueInput:
+    //            x = float.Parse(x.ToString() + digit);
+    //            break;
+    //        case Step.SecondValueInput:
+    //            y = float.Parse(y.ToString() + digit);
+    //            break;
+    //        case Step.OperationInput:
+    //            y = float.Parse(digit);
+    //            step = Step.SecondValueInput;
+    //            break;
+    //        case Step.ZeroDivision:
+    //            x = float.Parse(digit);
+    //            step = Step.FirstValueInput;
+    //            break;
+    //        case Step.ResultOperation:
+    //            x = float.Parse(digit);
+    //            result = x;
+    //            step = Step.ResultOperationInput;
+    //            break;
+    //        case Step.ResultOperationInput:
+    //            x = float.Parse(x.ToString() + digit);
+    //            result = x;
+    //            break;
+    //    }
 
-    }
-    public void SendCheckableOperation(Func<float, float, float?> callback)
-    {
-        switch (step)
-        {
-            case Step.Opening:
-                operation = callback;
-                step = Step.OperationInput;
-                break;
-            case Step.FirstValueInput:
-                operation = callback;
-                step = Step.OperationInput;
-                break;
-            case Step.OperationInput:
-                operation = callback;
-                break;
-            case Step.SecondValueInput:
-                var tmp = operation(x, y);
-                if (tmp == null)
-                {
-                    step = Step.ZeroDivision;
-                }
-                else
-                {
-                    result = tmp;
-                    x = result.Value;
-                    step = Step.OperationInput;
-                }
-                operation = callback;
-                break;
-            case Step.ZeroDivision:
-                break;
-            case Step.ResultOperation:
-                operation = callback;
-                x = result.Value;
-                step = Step.OperationInput;
-                break;
-        }
-    }
-    public void Equal()
-    {
-        switch (step)
-        {
-            case Step.Opening:
-                result = x;
-                break;
-            case Step.FirstValueInput:
-                result = x;
-                step = Step.Opening;
-                break;
-            case Step.OperationInput:
-                y = x;
-                var tmp = operation(x, y);
-                if (tmp == null)
-                {
-                    step = Step.ZeroDivision;
-                }
-                else
-                {
-                    result = tmp.Value;
-                    step = Step.ResultOperation;
-                }
-                break;
-            case Step.SecondValueInput:
-                var tmp1 = operation(x, y);
-                if (tmp1 == null)
-                {
-                    step = Step.ZeroDivision;
-                }
-                else
-                {
-                    result = tmp1.Value;
-                    step = Step.ResultOperation;
-                }
-                break;
-            case Step.ResultOperation:
-            case Step.ResultOperationInput:
-                x = result.Value;
-                result = operation(x, y).Value;
-                break;
-        }
-    }
+    //}
+    //public void SendCheckableOperation(Func<float, float, float?> callback)
+    //{
+    //    switch (step)
+    //    {
+    //        case Step.Opening:
+    //            operation = callback;
+    //            step = Step.OperationInput;
+    //            break;
+    //        case Step.FirstValueInput:
+    //            operation = callback;
+    //            step = Step.OperationInput;
+    //            break;
+    //        case Step.OperationInput:
+    //            operation = callback;
+    //            break;
+    //        case Step.SecondValueInput:
+    //            var tmp = operation(x, y);
+    //            if (tmp == null)
+    //            {
+    //                step = Step.ZeroDivision;
+    //            }
+    //            else
+    //            {
+    //                result = tmp;
+    //                x = result.Value;
+    //                step = Step.OperationInput;
+    //            }
+    //            operation = callback;
+    //            break;
+    //        case Step.ZeroDivision:
+    //            break;
+    //        case Step.ResultOperation:
+    //            operation = callback;
+    //            x = result.Value;
+    //            step = Step.OperationInput;
+    //            break;
+    //    }
+    //}
+    //public void Equal()
+    //{
+    //    switch (step)
+    //    {
+    //        case Step.Opening:
+    //            result = x;
+    //            break;
+    //        case Step.FirstValueInput:
+    //            result = x;
+    //            step = Step.Opening;
+    //            break;
+    //        case Step.OperationInput:
+    //            y = x;
+    //            var tmp = operation(x, y);
+    //            if (tmp == null)
+    //            {
+    //                step = Step.ZeroDivision;
+    //            }
+    //            else
+    //            {
+    //                result = tmp.Value;
+    //                step = Step.ResultOperation;
+    //            }
+    //            break;
+    //        case Step.SecondValueInput:
+    //            var tmp1 = operation(x, y);
+    //            if (tmp1 == null)
+    //            {
+    //                step = Step.ZeroDivision;
+    //            }
+    //            else
+    //            {
+    //                result = tmp1.Value;
+    //                step = Step.ResultOperation;
+    //            }
+    //            break;
+    //        case Step.ResultOperation:
+    //        case Step.ResultOperationInput:
+    //            x = result.Value;
+    //            result = operation(x, y).Value;
+    //            break;
+    //    }
+    //}
 }
