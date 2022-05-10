@@ -19,12 +19,7 @@ public class Division : MonoBehaviour
                 
             },
             (result) => 
-            {
-                if (result == null)
-                {
-                    manager.Clear();
-                    return "Делить на ноль нельзя!";
-                }
+            {                
                 return result + " " + button.name;
             }
             );
