@@ -15,7 +15,7 @@ public class StartingState : ICalculator
     public void TextParse(string digit)
     {
         calculator.x = float.Parse(digit);
-        nextState = new FirstValueInputState(calculator);
+        nextState = new FirstValueInputState(calculator);        
     }
     public void OperationTypeSaving(Func<float, float, float?> operation)
     {
@@ -26,11 +26,18 @@ public class StartingState : ICalculator
     {
         calculator.result = calculator.x;        
     }
+    public void ModifyInputValue(Func<float, float> modifier)
+    {
+        calculator.modifier = modifier;
+        nextState = new ModifyFirstValueState(calculator);
+    }
     public ICalculator ChangeState()
     {
         calculator.NextState = nextState != null ? nextState : new StartingState(calculator);
         return nextState != null ? nextState : new StartingState(calculator);
     }
+
+    
 }
 public class FirstValueInputState : ICalculator
 {
@@ -41,8 +48,8 @@ public class FirstValueInputState : ICalculator
         this.calculator = calculator;
     }
     public void TextParse(string digit)
-    {
-        calculator.x = float.Parse(calculator.x.ToString() + digit);
+    {   
+        calculator.x = float.Parse(calculator.X + digit);
     }
     public void OperationTypeSaving(Func<float, float, float?> operation)
     {
@@ -54,11 +61,61 @@ public class FirstValueInputState : ICalculator
         calculator.result = calculator.x;
         nextState = new StartingState(calculator);
     }
+    public void ModifyInputValue(Func<float, float> modifier)
+    {
+        calculator.modifier = modifier;
+        nextState = new ModifyFirstValueState(calculator);
+    }
     public ICalculator ChangeState()
     {
         calculator.NextState = nextState != null ? nextState : new FirstValueInputState(calculator);
         return nextState != null ? nextState : new FirstValueInputState(calculator);
-    }   
+    }
+
+    
+}
+public class ModifyFirstValueState : ICalculator
+{
+    private Calculator calculator;
+    private ICalculator nextState;
+    public ModifyFirstValueState (Calculator calculator)
+    {
+        this.calculator = calculator;
+    }
+    public void TextParse(string digit)
+    {
+        if (digit == "0")
+            calculator.TrailingZeroes += digit;
+        else
+        {
+            calculator.x = float.Parse(calculator.X + digit);
+            calculator.x = calculator.modifier(calculator.x);
+            calculator.TrailingZeroes = string.Empty;
+        }
+        //nextState = new FirstValueInputState(calculator);
+    }
+    public void OperationTypeSaving(Func<float, float, float?> operation)
+    {
+        calculator.operation = operation;
+        nextState = new OperationInputState(calculator);
+    }
+    public void ActivateOperation()
+    {
+        calculator.result = calculator.x;
+        nextState = new StartingState(calculator);
+    }
+    public void ModifyInputValue(Func<float, float> modifier)
+    {
+        calculator.modifier = modifier;
+        calculator.x = calculator.modifier(calculator.x);
+    }
+
+    public ICalculator ChangeState()
+    {
+        calculator.NextState = nextState != null ? nextState : new ModifyFirstValueState(calculator);
+        return nextState != null ? nextState : new ModifyFirstValueState(calculator);
+    }
+
 }
 public class OperationInputState : ICalculator
 {
@@ -92,6 +149,12 @@ public class OperationInputState : ICalculator
             nextState = new ResultOperationState(calculator);
         }
     }
+    public void ModifyInputValue(Func<float, float> modifier)
+    {
+        calculator.modifier = modifier;
+        nextState = new ModifySecondValueState(calculator);
+    }
+
     public ICalculator ChangeState()
     {
         calculator.NextState = nextState != null ? nextState : new OperationInputState(calculator);
@@ -108,7 +171,7 @@ public class SecondValueInputState : ICalculator
     }
     public void TextParse(string digit)
     {
-        calculator.y = float.Parse(calculator.y.ToString() + digit);
+        calculator.y = float.Parse(calculator.Y + digit);
         calculator.result = calculator.operation(calculator.x, calculator.y);
     }
     public void OperationTypeSaving(Func<float, float, float?> operation)
@@ -139,11 +202,72 @@ public class SecondValueInputState : ICalculator
             nextState = new ResultOperationState(calculator);
         }
     }
+    public void ModifyInputValue(Func<float, float> modifier)
+    {
+        calculator.modifier = modifier;
+        nextState = new ModifySecondValueState(calculator);
+    }
     public ICalculator ChangeState()
     {
         calculator.NextState = nextState != null ? nextState : new SecondValueInputState(calculator);
         return nextState != null ? nextState : new SecondValueInputState(calculator);
     }    
+}
+public class ModifySecondValueState : ICalculator
+{
+    private Calculator calculator;
+    private ICalculator nextState;
+    public ModifySecondValueState(Calculator calculator)
+    {
+        this.calculator = calculator;
+    }
+    public void TextParse(string digit)
+    {
+        calculator.y = float.Parse(calculator.Y + digit);        
+        calculator.y = calculator.modifier(calculator.y);
+        calculator.result = calculator.operation(calculator.x, calculator.y);
+        nextState = new SecondValueInputState(calculator);
+    }
+    public void OperationTypeSaving(Func<float, float, float?> operation)
+    {
+        var tmp = calculator.operation(calculator.x, calculator.y);
+        if (tmp == null)
+        {
+            nextState = new ZeroDivisionState(calculator);
+        }
+        else
+        {
+            calculator.result = tmp;
+            calculator.x = calculator.result.Value;
+            nextState = new OperationInputState(calculator);
+        }
+        calculator.operation = operation;
+    }
+    public void ActivateOperation()
+    {
+        var tmp1 = calculator.operation(calculator.x, calculator.y);
+        if (tmp1 == null)
+        {
+            nextState = new ZeroDivisionState(calculator);
+        }
+        else
+        {
+            calculator.result = tmp1.Value;
+            nextState = new ResultOperationState(calculator);
+        }
+    }
+    public void ModifyInputValue(Func<float, float> modifier)
+    {
+        calculator.modifier = modifier;
+        calculator.y = calculator.modifier(calculator.y);
+    }
+
+    public ICalculator ChangeState()
+    {
+        calculator.NextState = nextState != null ? nextState : new ModifySecondValueState(calculator);
+        return nextState != null ? nextState : new ModifySecondValueState(calculator);
+    }
+
 }
 public class ResultOperationState : ICalculator
 {
@@ -156,13 +280,13 @@ public class ResultOperationState : ICalculator
     public void TextParse(string digit)
     {
         calculator.x = float.Parse(digit);
-        calculator.result = calculator.x;
         nextState = new ResultOperationInputState(calculator);
     }
     public void OperationTypeSaving(Func<float, float, float?> operation)
     {
         calculator.operation = operation;
         calculator.x = calculator.result.Value;
+        calculator.y = 0;
         nextState = new OperationInputState(calculator);
     }
     public void ActivateOperation()
@@ -170,7 +294,11 @@ public class ResultOperationState : ICalculator
         calculator.x = calculator.result.Value;
         calculator.result = calculator.operation(calculator.x, calculator.y);
     }
-
+    public void ModifyInputValue(Func<float, float> modifier)
+    {
+        calculator.modifier = modifier;
+        nextState = new ModifyResultValueState(calculator);
+    }
     public ICalculator ChangeState()
     {
         calculator.NextState = nextState != null ? nextState : new ResultOperationState(calculator);
@@ -187,8 +315,45 @@ public class ResultOperationInputState : ICalculator
     }
     public void TextParse(string digit)
     {
-        calculator.x = float.Parse(calculator.x.ToString() + digit);
+        calculator.x = float.Parse(calculator.X + digit);
         calculator.result = calculator.x;
+    }
+    public void OperationTypeSaving(Func<float, float, float?> operation)
+    {
+        calculator.operation = operation;
+        nextState = new OperationInputState(calculator);
+    }
+    public void ActivateOperation()
+    {
+        calculator.result = calculator.operation(calculator.x, calculator.y).Value;
+        nextState = new ResultOperationState(calculator);
+    }
+    public void ModifyInputValue(Func<float, float> modifier)
+    {
+        calculator.modifier = modifier;
+        nextState = new ModifyResultValueState(calculator);
+    }
+    public ICalculator ChangeState()
+    {
+        calculator.NextState = nextState != null ? nextState : new ResultOperationInputState(calculator);
+        return nextState != null ? nextState : new ResultOperationInputState(calculator);
+    }    
+}
+public class ModifyResultValueState : ICalculator
+{
+    private Calculator calculator;
+    private ICalculator nextState;
+    public ModifyResultValueState(Calculator calculator)
+    {
+        this.calculator = calculator;
+    }
+
+    public void TextParse(string digit)
+    {
+        calculator.x = calculator.result.Value;
+        calculator.x = float.Parse(calculator.X + digit);
+        calculator.x = calculator.modifier(calculator.x);        
+        nextState = new ResultOperationInputState(calculator);
     }
     public void OperationTypeSaving(Func<float, float, float?> operation)
     {
@@ -201,10 +366,15 @@ public class ResultOperationInputState : ICalculator
         calculator.result = calculator.operation(calculator.x, calculator.y).Value;
         nextState = new ResultOperationState(calculator);
     }
+    public void ModifyInputValue(Func<float, float> modifier)
+    {
+        calculator.modifier = modifier;
+        calculator.x = calculator.modifier(calculator.x);
+    }
     public ICalculator ChangeState()
     {
-        calculator.NextState = nextState != null ? nextState : new ResultOperationInputState(calculator);
-        return nextState != null ? nextState : new ResultOperationInputState(calculator);
+        calculator.NextState = nextState != null ? nextState : new ModifyResultValueState(calculator);
+        return nextState != null ? nextState : new ModifyResultValueState(calculator);
     }    
 }
 public class ZeroDivisionState : ICalculator
@@ -228,6 +398,9 @@ public class ZeroDivisionState : ICalculator
         calculator.Clear();
         nextState = new StartingState(calculator);
     }
+    public void ModifyInputValue(Func<float, float> modifier)
+    {
+    }
     public ICalculator ChangeState()
     {
         calculator.NextState = nextState != null ? nextState : new ZeroDivisionState(calculator);
@@ -243,8 +416,10 @@ public class Calculator
     public float y;
     public float? result;
     public Func<float, float, float?> operation;
-    public string X => x.ToString();
-    public string Y => y.ToString();
+    public Func<float, float> modifier;
+    public string TrailingZeroes;
+    public string X => x.ToString() + TrailingZeroes;    
+    public string Y => y.ToString() + TrailingZeroes;
     public string Result => result?.ToString();
     public ICalculator NextState;
     public Calculator()

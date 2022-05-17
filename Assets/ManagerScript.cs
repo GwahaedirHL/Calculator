@@ -6,6 +6,7 @@ public interface ICalculator
     ICalculator ChangeState();
     void ActivateOperation();
     void OperationTypeSaving(Func<float, float, float?> operation);
+    void ModifyInputValue(Func<float, float> modifier);
     void TextParse(string digit);
 }
 public interface IOutputFormatter
@@ -13,6 +14,7 @@ public interface IOutputFormatter
     void TextParse(Text inputText, Text logText);
     void OperationTypeSaving(Text inputText, Text logText, Func<string, string> format);
     void ActivateOperation(Text inputText, Text logText);
+    void ModifyInputValue(Text inputText, Text logText, Func<string, string> modifierFormat);
     void GetCalculatorValues(Calculator calculator);
     IOutputFormatter ChangeState();
 }
@@ -31,17 +33,22 @@ public class StartingStateFormatter : IOutputFormatter
     }
     public void TextParse(Text inputText, Text logText)
     {
-        inputText.text = calculator.x.ToString();
+        inputText.text = calculator.X;
         nextState = new FirstValueInputStateFormatter(format);
     }
     public void OperationTypeSaving(Text inputText, Text logText, Func<string, string> format)
     {
-        logText.text = format(calculator.x.ToString());        
+        logText.text = format(calculator.X);        
         nextState = new OperationInputStateFormatter(format);
     }
     public void ActivateOperation(Text inputText, Text logText)
     {
         logText.text = inputText.text + "=";
+    }
+    public void ModifyInputValue(Text inputText, Text logText, Func<string, string> modifierFormat)
+    {
+        inputText.text = modifierFormat(calculator.X);
+        nextState = new FirstValueInputStateFormatter(format);
     }
 
     public IOutputFormatter ChangeState()
@@ -63,19 +70,23 @@ public class FirstValueInputStateFormatter : IOutputFormatter
         this.calculator = calculator;
     }
     public void TextParse(Text inputText, Text logText)
-    {
-        inputText.text = calculator.x.ToString();
+    {        
+        inputText.text = calculator.X;        
     }
     public void OperationTypeSaving(Text inputText, Text logText, Func<string, string> format)
     {
-        logText.text = format(calculator.x.ToString());
-        inputText.text = calculator.x.ToString();
+        logText.text = format(calculator.X);
+        inputText.text = calculator.X;
         nextState = new OperationInputStateFormatter(format);
     }
     public void ActivateOperation(Text inputText, Text logText)
     {
         logText.text = inputText.text + "=";
         nextState = new StartingStateFormatter(format);
+    }
+    public void ModifyInputValue(Text inputText, Text logText, Func<string, string> modifierFormat)
+    {
+        inputText.text = modifierFormat(calculator.X);
     }
     public IOutputFormatter ChangeState()
     {
@@ -97,13 +108,13 @@ public class OperationInputStateFormatter : IOutputFormatter
     }
     public void TextParse(Text inputText, Text logText)
     {
-        inputText.text = calculator.y.ToString();
+        inputText.text = calculator.Y;
         nextState = new SecondValueInputStateFormatter(format);
     }
     public void OperationTypeSaving(Text inputText, Text logText, Func<string, string> format)
     {
-        logText.text = format(calculator.x.ToString());
-        inputText.text = calculator.x.ToString();
+        logText.text = format(calculator.X);
+        inputText.text = calculator.X;
         this.format = format;
     }
     public void ActivateOperation(Text inputText, Text logText)
@@ -115,10 +126,15 @@ public class OperationInputStateFormatter : IOutputFormatter
         }
         else
         {
-            logText.text = format(calculator.x.ToString()) + calculator.x.ToString() + "=";
-            inputText.text = calculator.result.ToString();
+            logText.text = format(calculator.X) + calculator.X + "=";
+            inputText.text = calculator.Result;
             nextState = new ResultOperationStateFormatter(format);
         }
+    }
+    public void ModifyInputValue(Text inputText, Text logText, Func<string, string> modifierFormat)
+    {
+        inputText.text = modifierFormat(calculator.Y);
+        nextState = new SecondValueInputStateFormatter(format);
     }
     public IOutputFormatter ChangeState()
     {
@@ -140,26 +156,26 @@ public class SecondValueInputStateFormatter : IOutputFormatter
     }
     public void TextParse(Text inputText, Text logText)
     {
-        inputText.text = calculator.y.ToString();
+        inputText.text = calculator.Y;
     }
     public void OperationTypeSaving(Text inputText, Text logText, Func<string, string> format)
     {        
         if (calculator.NextState is ZeroDivisionState)
         {
-            logText.text = this.format(calculator.x.ToString()) + format(calculator.y.ToString());
+            logText.text = this.format(calculator.X) + format(calculator.Y);
             inputText.text = "На ноль делить нельзя";
             nextState = new ZeroDivisionStateFormatter(format);
         }
         else
         {
-            logText.text = format(calculator.result.ToString());
+            logText.text = format(calculator.Result);
             inputText.text = default;
             nextState = new OperationInputStateFormatter(format);
         }
     }
     public void ActivateOperation(Text inputText, Text logText)
     {
-        logText.text = format(calculator.x.ToString()) + calculator.y.ToString() + "=";
+        logText.text = format(calculator.X) + calculator.Y + "=";
         if (calculator.NextState is ZeroDivisionState)
         {
             inputText.text = "На ноль делить нельзя";
@@ -167,9 +183,13 @@ public class SecondValueInputStateFormatter : IOutputFormatter
         }
         else
         {
-            inputText.text = calculator.result.ToString();
+            inputText.text = calculator.Result;
             nextState = new ResultOperationStateFormatter(format);
         }
+    }
+    public void ModifyInputValue(Text inputText, Text logText, Func<string, string> modifierFormat)
+    {
+        inputText.text = modifierFormat(calculator.Y);
     }
     public IOutputFormatter ChangeState()
     {
@@ -192,19 +212,25 @@ public class ResultOperationStateFormatter : IOutputFormatter
     public void TextParse(Text inputText, Text logText)
     {
         logText.text = default;
-        inputText.text = calculator.x.ToString();
+        inputText.text = calculator.X;
         nextState = new ResultOperationInputStateFormatter(format);
     }
     public void OperationTypeSaving(Text inputText, Text logText, Func<string, string> format)
     {
-        logText.text = format(calculator.x.ToString());
+        logText.text = format(calculator.X);
         inputText.text = default;
         nextState = new OperationInputStateFormatter(format);
     }
     public void ActivateOperation(Text inputText, Text logText)
     {
-        inputText.text = calculator.result.ToString();
-        logText.text = format(calculator.x.ToString()) + calculator.y.ToString() + "=";
+        inputText.text = calculator.Result;
+        logText.text = format(calculator.X) + calculator.Y + "=";
+    }
+    public void ModifyInputValue(Text inputText, Text logText, Func<string, string> modifierFormat)
+    {
+        logText.text = default;
+        inputText.text = modifierFormat(calculator.Result);
+        nextState = new ResultOperationInputStateFormatter(format);
     }
     public IOutputFormatter ChangeState()
     {
@@ -226,19 +252,23 @@ public class ResultOperationInputStateFormatter : IOutputFormatter
     }
     public void TextParse(Text inputText, Text logText)
     {
-        inputText.text = calculator.x.ToString();
+        inputText.text = calculator.X;
     }
     public void OperationTypeSaving(Text inputText, Text logText, Func<string, string> format)
     {
-        logText.text = format(calculator.x.ToString());
-        inputText.text = calculator.x.ToString();
-        nextState = new SecondValueInputStateFormatter(format);
+        logText.text = format(calculator.X);
+        inputText.text = calculator.X;
+        nextState = new OperationInputStateFormatter(format);
     }
     public void ActivateOperation(Text inputText, Text logText)
     {
-        logText.text = format(calculator.x.ToString()) + calculator.y.ToString() + "=";
-        inputText.text = calculator.result.ToString();
+        logText.text = format(calculator.X) + calculator.Y + "=";
+        inputText.text = calculator.Result;
         nextState = new ResultOperationStateFormatter(format);
+    }
+    public void ModifyInputValue(Text inputText, Text logText, Func<string, string> modifierFormat)
+    {
+        inputText.text = modifierFormat(calculator.X);
     }
     public IOutputFormatter ChangeState()
     {
@@ -260,7 +290,7 @@ public class ZeroDivisionStateFormatter : IOutputFormatter
     }
     public void TextParse(Text inputText, Text logText)
     {
-        inputText.text = calculator.x.ToString();
+        inputText.text = calculator.X;
         logText.text = default;
         nextState = new FirstValueInputStateFormatter(format);
     }
@@ -272,6 +302,9 @@ public class ZeroDivisionStateFormatter : IOutputFormatter
         inputText.text = "0";
         logText.text = default;
         nextState = new StartingStateFormatter(format);
+    }
+    public void ModifyInputValue(Text inputText, Text logText, Func<string, string> modifierFormat)
+    {
     }
     public IOutputFormatter ChangeState()
     {
@@ -314,6 +347,7 @@ public class ManagerScript : MonoBehaviour
         outputFormatter.GetCalculatorValues(calculator);
         outputFormatter.TextParse(inputText, logText);
         outputFormatter = outputFormatter.ChangeState();
+        Debug.LogWarning(calculator.X + " " + calculator.Y + " " + calculator.Result);
     }    
     public void SendCheckableOperation(Func<float,float,float?> callback, Func<string, string> format) 
     {
@@ -322,6 +356,7 @@ public class ManagerScript : MonoBehaviour
         outputFormatter.GetCalculatorValues(calculator);
         outputFormatter.OperationTypeSaving(inputText, logText, format);
         outputFormatter = outputFormatter.ChangeState();
+        Debug.LogWarning(calculator.X + " " + calculator.Y + " " + calculator.Result);
     }
     public void Equal()
     {
@@ -330,5 +365,15 @@ public class ManagerScript : MonoBehaviour
         outputFormatter.GetCalculatorValues(calculator);
         outputFormatter.ActivateOperation(inputText, logText);
         outputFormatter = outputFormatter.ChangeState();
+        Debug.LogWarning(calculator.X + " " + calculator.Y + " " + calculator.Result);
+    }
+    public void ModifyInput(Func<string, string> modifierFormat, Func<float, float> modifier)
+    {
+        icalculator.ModifyInputValue(modifier);
+        icalculator = icalculator.ChangeState();
+        outputFormatter.GetCalculatorValues(calculator);
+        outputFormatter.ModifyInputValue(inputText, logText, modifierFormat);
+        outputFormatter = outputFormatter.ChangeState();
+        Debug.LogWarning(calculator.X + " " + calculator.Y + " " + calculator.Result);
     }
 }
